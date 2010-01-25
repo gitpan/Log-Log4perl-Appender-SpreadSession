@@ -5,7 +5,7 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 our @ISA = qw/ Log::Log4perl::Appender /;
 
@@ -34,13 +34,12 @@ sub new {
 ##################################################
 sub log {
 ##################################################
-    my $self   = shift;
-    my %params = @_;
+    my ($self, %args) = shift;
 
     my $spread = $self->{spread_session};
 
     # publish the message to the specified group
-    $spread->publish( $self->{group}, $params{message} );
+    $spread->publish( $self->{group}, $args{message} );
 
     return;
 }
