@@ -5,7 +5,7 @@ use 5.008008;
 use strict;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 our @ISA = qw/ Log::Log4perl::Appender /;
 
@@ -21,10 +21,15 @@ sub new {
     };
 
     # Create a new session
-    $self->{spread_session} = Spread::Session->new(
-        spread_name  => $args{spread_name} ,
-        private_name => $args{private_name},
-    );
+    eval {
+        $self->{spread_session} = Spread::Session->new(
+            spread_name  => $args{spread_name} ,
+            private_name => $args{private_name},
+        );
+    };
+    if ($@) {
+        warn "ERROR creating new $class: $@\n";
+    }
 
     bless $self, $class;
 
@@ -34,12 +39,23 @@ sub new {
 ##################################################
 sub log {
 ##################################################
-    my ($self, %args) = shift;
+    my ($self, %args) = @_;
 
     my $spread = $self->{spread_session};
 
+    # do nothing if the Spread::Session object is missing
+    return unless $spread;
+
     # publish the message to the specified group
-    $spread->publish( $self->{group}, $args{message} );
+    eval {
+        $spread->publish( $self->{group}, $args{message} );
+    };
+    # If you got an error warn about it and clear the 
+    # Spread::Session object so we don't keep trying
+    if ($@) {
+        warn "ERROR logging to spread via ".ref($self).": $@\n";
+        $self->{spread_session} = undef;
+    }
 
     return;
 }
